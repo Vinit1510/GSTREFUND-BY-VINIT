@@ -28,12 +28,12 @@ Before using the tool, you need to download your return data directly from the o
 
 Open the web application and you will see three main tabs at the top of the screen.
 
-### Tab 1: 📂 Upload GSTR-2B
+###  📂 Upload GSTR-2B
 1. Click on the **Upload GSTR-2B** tab.
 2. Drag and drop the **GSTR-2B Excel file** you downloaded earlier into the upload box (or click to browse your computer).
 3. The tool will instantly read the Excel sheets (`B2B`, `B2BA`, `CDNR`, `CDNRA`) and display a preview of your eligible Input Tax Credit (ITC) data.
 
-### Tab 3: 📂 Upload GSTR-1
+### 📂 Upload GSTR-1
 1. Click on the **Upload GSTR-1** tab.
 2. Drag and drop **all of your GSTR-1 JSON files** into the upload box at the same time. 
 3. *Yes! You can upload 3, 6, or even 12 months of JSON files all at once.*
