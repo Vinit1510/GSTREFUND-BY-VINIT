@@ -79,13 +79,20 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-tab1, tab2, tab3 = st.tabs(["📁 Data Upload", "⚙️ Refund Calculator", "📄 Official Statement 1"])
+tab_guide, tab1, tab2, tab3 = st.tabs(["📖 User Guide", "📁 Data Upload", "⚙️ Refund Calculator", "📄 Official Statement 1"])
+
+with tab_guide:
+    try:
+        with open("USER_GUIDE.md", "r", encoding="utf-8") as f:
+            st.markdown(f.read())
+    except FileNotFoundError:
+        st.info("User Guide not found. Please ensure USER_GUIDE.md is in the same directory.")
 
 with tab1:
     st.header("Upload Tax Documents")
     
     gstr2b_path = st.file_uploader("Upload GSTR-2B (Excel)", type=["xlsx"])
-    gstr1_path = st.file_uploader("Upload GSTR-1 (JSON)", type=["json"])
+    gstr1_path = st.file_uploader("Upload GSTR-1 (JSON)", type=["json"], accept_multiple_files=True)
     
     if not gstr2b_path or not gstr1_path:
         st.info("Please provide both GSTR-2B and GSTR-1 files to proceed to the next tabs.")
@@ -132,38 +139,46 @@ def load_gstr2b(file_obj):
 b2b_df, cdnr_df, user_gstin, user_legal_name = load_gstr2b(gstr2b_path)
 
 @st.cache_data
-def process_gstr1(file_obj):
-    try:
-        data = json.load(open(file_obj, "r", encoding="utf-8")) if isinstance(file_obj, str) else json.load(file_obj)
-        sales = []
+def process_gstr1(file_objs):
+    sales = []
+    if not isinstance(file_objs, list):
+        file_objs = [file_objs]
         
-        if 'b2b' in data:
-            for c in data['b2b']:
-                for inv in c.get('inv', []):
-                    for itm in inv.get('itms', []):
-                        det = itm.get('itm_det', {})
-                        sales.append({'Type': 'B2B', 'Rate': det.get('rt', 0), 'Taxable Value': det.get('txval', 0), 'Tax': det.get('iamt', 0) + det.get('camt', 0) + det.get('samt', 0), 'IGST': det.get('iamt', 0), 'CGST': det.get('camt', 0), 'SGST': det.get('samt', 0)})
-        if 'b2cs' in data:
-            for c in data['b2cs']:
-                sales.append({'Type': 'B2CS', 'Rate': c.get('rt', 0), 'Taxable Value': c.get('txval', 0), 'Tax': c.get('iamt', 0) + c.get('camt', 0) + c.get('samt', 0), 'IGST': c.get('iamt', 0), 'CGST': c.get('camt', 0), 'SGST': c.get('samt', 0)})
-        if 'b2cl' in data:
-            for c in data['b2cl']:
-                for inv in c.get('inv', []):
-                    for itm in inv.get('itms', []):
-                        det = itm.get('itm_det', {})
-                        sales.append({'Type': 'B2CL', 'Rate': det.get('rt', 0), 'Taxable Value': det.get('txval', 0), 'Tax': det.get('iamt', 0) + det.get('camt', 0) + det.get('samt', 0), 'IGST': det.get('iamt', 0), 'CGST': det.get('camt', 0), 'SGST': det.get('samt', 0)})
-        if 'cdnr' in data:
-            for c in data['cdnr']:
-                for nt in c.get('nt', []):
-                    nt_type = nt.get('ntty')
-                    mult = -1 if nt_type == 'C' else 1
-                    for itm in nt.get('itms', []):
-                        det = itm.get('itm_det', {})
-                        sales.append({'Type': f'CDNR ({nt_type})', 'Rate': det.get('rt', 0), 'Taxable Value': det.get('txval', 0) * mult, 'Tax': (det.get('iamt', 0) + det.get('camt', 0) + det.get('samt', 0)) * mult, 'IGST': det.get('iamt', 0) * mult, 'CGST': det.get('camt', 0) * mult, 'SGST': det.get('samt', 0) * mult})
+    for file_obj in file_objs:
+        try:
+            data = json.load(open(file_obj, "r", encoding="utf-8")) if isinstance(file_obj, str) else json.load(file_obj)
+            
+            if 'b2b' in data:
+                for c in data['b2b']:
+                    for inv in c.get('inv', []):
+                        for itm in inv.get('itms', []):
+                            det = itm.get('itm_det', {})
+                            sales.append({'Type': 'B2B', 'Rate': det.get('rt', 0), 'Taxable Value': det.get('txval', 0), 'Tax': det.get('iamt', 0) + det.get('camt', 0) + det.get('samt', 0), 'IGST': det.get('iamt', 0), 'CGST': det.get('camt', 0), 'SGST': det.get('samt', 0)})
+            if 'b2cs' in data:
+                for c in data['b2cs']:
+                    sales.append({'Type': 'B2CS', 'Rate': c.get('rt', 0), 'Taxable Value': c.get('txval', 0), 'Tax': c.get('iamt', 0) + c.get('camt', 0) + c.get('samt', 0), 'IGST': c.get('iamt', 0), 'CGST': c.get('camt', 0), 'SGST': c.get('samt', 0)})
+            if 'b2cl' in data:
+                for c in data['b2cl']:
+                    for inv in c.get('inv', []):
+                        for itm in inv.get('itms', []):
+                            det = itm.get('itm_det', {})
+                            sales.append({'Type': 'B2CL', 'Rate': det.get('rt', 0), 'Taxable Value': det.get('txval', 0), 'Tax': det.get('iamt', 0) + det.get('camt', 0) + det.get('samt', 0), 'IGST': det.get('iamt', 0), 'CGST': det.get('camt', 0), 'SGST': det.get('samt', 0)})
+            if 'cdnr' in data:
+                for c in data['cdnr']:
+                    for nt in c.get('nt', []):
+                        nt_type = nt.get('ntty')
+                        mult = -1 if nt_type == 'C' else 1
+                        for itm in nt.get('itms', []):
+                            det = itm.get('itm_det', {})
+                            sales.append({'Type': f'CDNR ({nt_type})', 'Rate': det.get('rt', 0), 'Taxable Value': det.get('txval', 0) * mult, 'Tax': (det.get('iamt', 0) + det.get('camt', 0) + det.get('samt', 0)) * mult, 'IGST': det.get('iamt', 0) * mult, 'CGST': det.get('camt', 0) * mult, 'SGST': det.get('samt', 0) * mult})
+        except Exception as e:
+            st.error(f"Error reading one of the GSTR-1 JSON files: {e}")
+            
+    try:
         df = pd.DataFrame(sales)
         return df
     except Exception as e:
-        st.error(f"Error parsing JSON: {e}")
+        st.error(f"Error combining GSTR-1 Data: {e}")
         return pd.DataFrame()
 
 sales_df = process_gstr1(gstr1_path)
