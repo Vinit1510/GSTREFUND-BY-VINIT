@@ -46,7 +46,7 @@ Open the web application and you will see three main tabs at the top of the scre
 
 Once your data is successfully uploaded and previewed, it's time to create your Annexure.
 
-1. Click on the **📄 Generate Report** tab.
+1. Click on the **📄 OFFICIAL STATEMENT 1** tab.
 2. You will see a form asking for your business details. Fill in the following exactly as you want them to appear on the official report:
    - **Financial Year** (e.g., *2023-2024*)
    - **Tax Period** (e.g., *April 2023 to September 2023*)
